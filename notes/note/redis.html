@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang='zh-CN'>
+
+<head>
+  <meta name="generator" content="Hexo 6.3.0">
+  <meta name="hexo-theme" content="https://github.com/xaoxuu/hexo-theme-stellar/tree/1.19.0">
+  <meta charset="utf-8">
+  
+
+  <meta http-equiv='x-dns-prefetch-control' content='on' />
+  <link rel='dns-prefetch' href='https://gcore.jsdelivr.net'>
+  <link rel="preconnect" href="https://gcore.jsdelivr.net" crossorigin>
+  <link rel='dns-prefetch' href='//unpkg.com'>
+
+  <meta name="renderer" content="webkit">
+  <meta name="force-rendering" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+  <meta name="HandheldFriendly" content="True" >
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="theme-color" content="#f8f8f8">
+  
+  <title>Notes：集成redis模块 - Barons</title>
+
+  
+    <meta name="description" content="导入redis新增配置： 12345678910111213spring: redis:    host: 117.78.51.210    port: 6379    database: 0#配置连接池    lettuce:      pool:        max-active: 20        max-idle: 8        max-wait: -1        min-id">
+<meta property="og:type" content="website">
+<meta property="og:title" content="集成redis模块">
+<meta property="og:url" content="http://example.com/notes/note/redis.html">
+<meta property="og:site_name" content="Barons">
+<meta property="og:description" content="导入redis新增配置： 12345678910111213spring: redis:    host: 117.78.51.210    port: 6379    database: 0#配置连接池    lettuce:      pool:        max-active: 20        max-idle: 8        max-wait: -1        min-id">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2023-09-25T12:14:27.680Z">
+<meta property="article:modified_time" content="2023-09-25T12:14:27.676Z">
+<meta property="article:author" content="Barons">
+<meta name="twitter:card" content="summary">
+  
+  
+  
+  
+
+  <!-- feed -->
+  
+
+  
+    
+<link rel="stylesheet" href="/css/main.css">
+
+  
+
+  
+
+  
+
+  
+
+
+  
+</head>
+
+<body>
+  
+
+
+
+
+  <div class='l_body' id='start'>
+    <aside class='l_left' layout='wiki'>
+    
+
+  
+
+<header class="header"><div class="logo-wrap"><a class="title" href="/"><div class="main" ff="title">Barons</div><div class="sub normal cap">柏毅</div><div class="sub hover cap" style="opacity:0">  barons.top</div></a></div>
+
+<nav class="menu dis-select"><a class="nav-item" href="/">主页</a><a class="nav-item" href="/wiki/">项目</a><a class="nav-item active" href="/notes/">笔记</a><a class="nav-item" href="/about/">更多</a></nav>
+</header>
+
+
+<div class="widgets">
+
+<widget class="widget-wrapper toc multi" id="data-toc"><div class="widget-header cap dis-select"><span class="name">框架</span></div><div class="widget-body fs14"><div class="doc-tree"><a class="doc-tree-link" href="/notes/index.html#start"><span class="toc-text">站点美化</span></a></div></div><div class="widget-header cap dis-select"><span class="name">Ape-Frame</span></div><div class="widget-body fs14"><div class="doc-tree"><a class="doc-tree-link" href="/notes/note/mp.html"><span class="toc-text">集成Mybatis-plus模块</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/notes/note/web.html"><span class="toc-text">集成Web模块</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/notes/note/log.html"><span class="toc-text">集成Log模块</span></a></div><div class="doc-tree active"><a class="doc-tree-link active" href="/notes/note/redis.html"><span class="toc-text">集成redis模块</span></a><ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AF%BC%E5%85%A5redis"><span class="toc-text">导入redis</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B0%81%E8%A3%85%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81"><span class="toc-text">封装分布式锁</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%B3%A8%E8%A7%A3%E7%BC%93%E5%AD%98"><span class="toc-text">注解缓存</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81%E4%B8%9A%E5%8A%A1%E5%9C%BA%E6%99%AF"><span class="toc-text">分布式锁业务场景</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Guava%E6%9C%AC%E5%9C%B0%E7%BC%93%E5%AD%98"><span class="toc-text">Guava本地缓存</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#CacheUtil%E6%9C%AC%E5%9C%B0%E7%BC%93%E5%AD%98%E5%B7%A5%E5%85%B7%E7%B1%BB"><span class="toc-text">CacheUtil本地缓存工具类</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Redis%E5%AE%9E%E7%8E%B0%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97"><span class="toc-text">Redis实现延迟队列</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Redis%E9%85%8D%E5%90%88lua%E8%84%9A%E6%9C%AC%E5%AE%9E%E7%8E%B0cas"><span class="toc-text">Redis配合lua脚本实现cas</span></a></li></ol></div><div class="doc-tree"><a class="doc-tree-link" href="/notes/note/tools.html"><span class="toc-text">集成tools模块</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/notes/note/thread.html"><span class="toc-text">多线程</span></a></div></div></widget>
+</div>
+
+
+    </aside>
+    <div class='l_main'>
+      
+
+      
+
+  
+  
+
+
+  <article class='md-text content wiki'>
+  <h1 class="article-title"><span>集成redis模块</span></h1>
+  <h3 id="导入redis"><a href="#导入redis" class="headerlink" title="导入redis"></a>导入redis</h3><p>新增配置：</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">spring:</span><br><span class="line"> redis:</span><br><span class="line">    host: 117.78.51.210</span><br><span class="line">    port: 6379</span><br><span class="line">    database: 0</span><br><span class="line">#配置连接池</span><br><span class="line">    lettuce:</span><br><span class="line">      pool:</span><br><span class="line">        max-active: 20</span><br><span class="line">        max-idle: 8</span><br><span class="line">        max-wait: -1</span><br><span class="line">        min-idle: 0</span><br><span class="line">    password: jingdianjichi</span><br></pre></td></tr></table></figure>
+
+<p>配置redis序列化器以及RedisTemplate</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">RedisConfig</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//RedisTemplate</span></span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="keyword">public</span> RedisTemplate&lt;String,Object&gt; <span class="title function_">redisTemplate</span><span class="params">(RedisConnectionFactory redisConnectionFactory)</span>&#123;</span><br><span class="line">        RedisTemplate&lt;String,Object&gt; redisTemplate = <span class="keyword">new</span> <span class="title class_">RedisTemplate</span>&lt;&gt;();</span><br><span class="line">        RedisSerializer&lt;String&gt; redisSerializer = <span class="keyword">new</span> <span class="title class_">StringRedisSerializer</span>();</span><br><span class="line">        redisTemplate.setConnectionFactory(redisConnectionFactory);</span><br><span class="line">        redisTemplate.setKeySerializer(redisSerializer);</span><br><span class="line">        redisTemplate.setHashKeySerializer(redisSerializer);</span><br><span class="line">        redisTemplate.setValueSerializer(jackson2JsonRedisSerializer());</span><br><span class="line">        redisTemplate.setHashValueSerializer(jackson2JsonRedisSerializer());</span><br><span class="line">        <span class="keyword">return</span> redisTemplate;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">   <span class="comment">//设置序列化器</span></span><br><span class="line">    <span class="keyword">private</span> Jackson2JsonRedisSerializer&lt;Object&gt; <span class="title function_">jackson2JsonRedisSerializer</span><span class="params">()</span>&#123;</span><br><span class="line">        Jackson2JsonRedisSerializer&lt;Object&gt; jsonRedisSerializer = <span class="keyword">new</span> <span class="title class_">Jackson2JsonRedisSerializer</span>&lt;&gt;(Object.class);</span><br><span class="line">        <span class="type">ObjectMapper</span> <span class="variable">objectMapper</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ObjectMapper</span>();</span><br><span class="line">        objectMapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);</span><br><span class="line">        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,<span class="literal">false</span>);</span><br><span class="line">        objectMapper.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL, JsonTypeInfo.As.PROPERTY);</span><br><span class="line">        jsonRedisSerializer.setObjectMapper(objectMapper);</span><br><span class="line">        <span class="keyword">return</span> jsonRedisSerializer;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="封装分布式锁"><a href="#封装分布式锁" class="headerlink" title="封装分布式锁"></a>封装分布式锁</h3><p> 参数校验可以使用common-logging包的StringUtils进行参数判断</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.jingdianjichi.redis.util;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> com.jingdianjichi.redis.exception.ShareLockException;</span><br><span class="line"><span class="keyword">import</span> org.apache.commons.lang.StringUtils;</span><br><span class="line"><span class="keyword">import</span> org.springframework.stereotype.Component;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> javax.annotation.Resource;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.TimeUnit;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@Author</span>: ChickenWing</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@Description</span>: Redis分布式锁</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@DateTime</span>: 2022/9/24 22:28</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">RedisShareLockUtil</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Resource</span></span><br><span class="line">    <span class="keyword">private</span> RedisUtil redisUtil;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="type">Long</span> <span class="variable">TIME_OUT</span> <span class="operator">=</span> <span class="number">1000L</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@Author</span>: ChickenWing</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@Description</span>: 加锁</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@DateTime</span>: 2022/9/24 21:25</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="comment">//参数:localKey表示分布式锁的key，requestId作为value作为识别当前锁是不是之前添加的</span></span><br><span class="line">    <span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">lock</span><span class="params">(String lockKey, String requestId, Long time)</span> &#123;</span><br><span class="line">        <span class="comment">//参数校验</span></span><br><span class="line">        <span class="keyword">if</span> (StringUtils.isBlank(lockKey) || StringUtils.isBlank(requestId) || time &lt;= <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">ShareLockException</span>(<span class="string">&quot;分布式锁-加锁参数异常&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="type">long</span> <span class="variable">currentTime</span> <span class="operator">=</span> System.currentTimeMillis();</span><br><span class="line">        <span class="type">long</span> <span class="variable">outTime</span> <span class="operator">=</span> currentTime + TIME_OUT;</span><br><span class="line">        <span class="type">Boolean</span> <span class="variable">result</span> <span class="operator">=</span> <span class="literal">false</span>;</span><br><span class="line">        <span class="comment">//加锁自旋</span></span><br><span class="line">        <span class="keyword">while</span> (currentTime &lt; outTime) &#123;</span><br><span class="line">            <span class="comment">//借助redis的setnx进行实现分布式锁</span></span><br><span class="line">            result = redisUtil.setNx(lockKey, requestId, time, TimeUnit.MILLISECONDS);</span><br><span class="line">            <span class="keyword">if</span> (result) &#123;</span><br><span class="line">                <span class="keyword">return</span> result;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">//休息后继续自旋</span></span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                Thread.sleep(<span class="number">100</span>);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">                e.printStackTrace();</span><br><span class="line">            &#125;</span><br><span class="line">            currentTime = System.currentTimeMillis();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@Author</span>: ChickenWing</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@Description</span>:解锁</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@DateTime</span>: 2022/9/24 21:25</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">unLock</span><span class="params">(String key, String requestId)</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (StringUtils.isBlank(key) || StringUtils.isBlank(requestId)) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">ShareLockException</span>(<span class="string">&quot;分布式锁-解锁-参数异常&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="comment">//解锁关键：判断value是否和之前的requestID一致，不一致不能解锁</span></span><br><span class="line">            <span class="type">String</span> <span class="variable">value</span> <span class="operator">=</span> redisUtil.get(key);</span><br><span class="line">            <span class="keyword">if</span> (requestId.equals(value)) &#123;</span><br><span class="line">                redisUtil.del(key);</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            <span class="comment">//补日志</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@Author</span>: ChickenWing</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@Description</span>: 尝试加锁</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@DateTime</span>: 2022/9/24 21:26</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">tryLock</span><span class="params">(String lockKey, String requestId, Long time)</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (StringUtils.isBlank(lockKey) || StringUtils.isBlank(requestId) || time &lt;= <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">ShareLockException</span>(<span class="string">&quot;分布式锁-尝试加锁参数异常&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//尝试一次，不可以就返回false</span></span><br><span class="line">        <span class="keyword">return</span> redisUtil.setNx(lockKey, requestId, time, TimeUnit.MILLISECONDS);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p><strong>场景</strong></p>
+<p>1.任务调度</p>
+<p>2.计算金额</p>
+<p>操作同一个数据</p>
+<h3 id="注解缓存"><a href="#注解缓存" class="headerlink" title="注解缓存"></a>注解缓存</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Bean</span></span><br><span class="line"><span class="keyword">public</span> RedisCacheManager <span class="title function_">redisCacheManager</span><span class="params">(RedisConnectionFactory redisConnectionFactory)</span>&#123;</span><br><span class="line">    <span class="type">RedisCacheWriter</span> <span class="variable">redisCacheWriter</span> <span class="operator">=</span> RedisCacheWriter.nonLockingRedisCacheWriter(redisConnectionFactory);</span><br><span class="line">    RedisSerializationContext.SerializationPair&lt;Object&gt; pair = RedisSerializationContext.SerializationPair.fromSerializer(jackson2JsonRedisSerializer());</span><br><span class="line">    <span class="type">RedisCacheConfiguration</span> <span class="variable">defaultCacheConfig</span> <span class="operator">=</span> RedisCacheConfiguration.defaultCacheConfig()</span><br><span class="line">            .serializeValuesWith(pair).entryTtl(Duration.ofSeconds(<span class="number">10</span>));</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">RedisCacheManager</span>(redisCacheWriter,defaultCacheConfig);</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>@Cacheable注解缺点，所有的key都需要在Duration.ofSeconds(10)统一设置使用此注解的所有key的超时时间。这就导致所有的key的过期时间都相同</p>
+<h3 id="分布式锁业务场景"><a href="#分布式锁业务场景" class="headerlink" title="分布式锁业务场景"></a>分布式锁业务场景</h3><p>1.任务调度</p>
+<p>2.计算金额，线程安全</p>
+<h3 id="Guava本地缓存"><a href="#Guava本地缓存" class="headerlink" title="Guava本地缓存"></a>Guava本地缓存</h3><p>当redis在高并发情况下qps非常高的时候，会达到一定瓶颈，使用本地缓存作为二级缓存可以有效的redis的压力</p>
+<h4 id="CacheUtil本地缓存工具类"><a href="#CacheUtil本地缓存工具类" class="headerlink" title="CacheUtil本地缓存工具类"></a>CacheUtil本地缓存工具类</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="meta">@Slf4j</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">GuavaCacheUtil</span>&lt;K, V&gt; &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Resource</span></span><br><span class="line">    <span class="keyword">public</span> RedisUtil redisUtil;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Value(&quot;$&#123;guava.cache.switch&#125;&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> Boolean switchCache;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//初始化本地缓存</span></span><br><span class="line">    <span class="keyword">private</span> Cache&lt;String, String&gt; localCache =</span><br><span class="line">            CacheBuilder.newBuilder()</span><br><span class="line">                    .maximumSize(<span class="number">5000</span>)</span><br><span class="line">                    .expireAfterWrite(<span class="number">3</span>, TimeUnit.SECONDS)</span><br><span class="line">                    .build();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> Map&lt;K, V&gt; <span class="title function_">getResult</span><span class="params">(List&lt;K&gt; idList, String cacheKeyPrefix, String cacheSuffix, Class&lt;V&gt; clazz,</span></span><br><span class="line"><span class="params">                               Function&lt;List&lt;K&gt;, Map&lt;K, V&gt;&gt; function)</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (CollectionUtils.isEmpty(idList)) &#123;</span><br><span class="line">            <span class="keyword">return</span> Collections.emptyMap();</span><br><span class="line">        &#125;</span><br><span class="line">        Map&lt;K, V&gt; resultMap = <span class="keyword">new</span> <span class="title class_">HashMap</span>&lt;&gt;(<span class="number">16</span>);</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> (!switchCache) &#123;</span><br><span class="line">            resultMap = function.apply(idList);</span><br><span class="line">            <span class="keyword">return</span> resultMap;</span><br><span class="line">        &#125;</span><br><span class="line">        List&lt;K&gt; noCacheIdList = <span class="keyword">new</span> <span class="title class_">LinkedList</span>&lt;&gt;();</span><br><span class="line">        <span class="comment">//遍历，没在本地缓存中的ID</span></span><br><span class="line">        <span class="keyword">for</span> (K id : idList) &#123;</span><br><span class="line">            <span class="type">String</span> <span class="variable">cacheKey</span> <span class="operator">=</span> cacheKeyPrefix + <span class="string">&quot;_&quot;</span> + id + <span class="string">&quot;_&quot;</span> + cacheSuffix;</span><br><span class="line">            <span class="type">String</span> <span class="variable">content</span> <span class="operator">=</span> localCache.getIfPresent(cacheKey);</span><br><span class="line">            <span class="keyword">if</span> (StringUtils.isNotBlank(content)) &#123;</span><br><span class="line">                <span class="type">V</span> <span class="variable">v</span> <span class="operator">=</span> JSON.parseObject(content, clazz);</span><br><span class="line">                resultMap.put(id, v);</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                noCacheIdList.add(id);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (CollectionUtils.isEmpty(noCacheIdList)) &#123;</span><br><span class="line">            <span class="keyword">return</span> resultMap;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//执行rpc方法</span></span><br><span class="line">        Map&lt;K, V&gt; noCacheResultMap = function.apply(noCacheIdList);</span><br><span class="line">        <span class="keyword">if</span> (noCacheResultMap == <span class="literal">null</span> || noCacheResultMap.isEmpty()) &#123;</span><br><span class="line">            <span class="keyword">return</span> resultMap;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//生成结果集，并加到本地缓存中。</span></span><br><span class="line">        <span class="keyword">for</span> (Map.Entry&lt;K, V&gt; entry : noCacheResultMap.entrySet()) &#123;</span><br><span class="line">            <span class="type">K</span> <span class="variable">id</span> <span class="operator">=</span> entry.getKey();</span><br><span class="line">            <span class="type">V</span> <span class="variable">result</span> <span class="operator">=</span> entry.getValue();</span><br><span class="line">            resultMap.put(id, result);</span><br><span class="line">            <span class="type">String</span> <span class="variable">cacheKey</span> <span class="operator">=</span> cacheKeyPrefix + <span class="string">&quot;_&quot;</span> + id + <span class="string">&quot;_&quot;</span> + cacheSuffix;</span><br><span class="line">            localCache.put(cacheKey, JSON.toJSONString(result));</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> resultMap;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="Redis实现延迟队列"><a href="#Redis实现延迟队列" class="headerlink" title="Redis实现延迟队列"></a>Redis实现延迟队列</h3><p>功能：定时群发任务</p>
+<p>定义群发任务</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Data</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MassMailTask</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> Long taskId;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> Date startTime;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>延时发送</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line">**</span><br><span class="line"> * <span class="meta">@Author</span>: ChickenWing</span><br><span class="line"> * <span class="meta">@Description</span>: 群发任务延时service</span><br><span class="line"> * <span class="meta">@DateTime</span>: <span class="number">2023</span>/<span class="number">1</span>/<span class="number">8</span> <span class="number">23</span>:<span class="number">24</span></span><br><span class="line"> */</span><br><span class="line"><span class="meta">@Service</span></span><br><span class="line"><span class="meta">@Slf4j</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MassMailTaskService</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Resource</span></span><br><span class="line">    <span class="keyword">private</span> RedisUtil redisUtil;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">String</span> <span class="variable">MASS_MAIL_TASK_KEY</span> <span class="operator">=</span> <span class="string">&quot;massMailTask&quot;</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">pushMassMailTaskQueue</span><span class="params">(MassMailTask massMailTask)</span> &#123;</span><br><span class="line">        <span class="type">Date</span> <span class="variable">startTime</span> <span class="operator">=</span> massMailTask.getStartTime();</span><br><span class="line">        <span class="keyword">if</span> (startTime == <span class="literal">null</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (startTime.compareTo(<span class="keyword">new</span> <span class="title class_">Date</span>()) &lt;= <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        log.info(<span class="string">&quot;定时群发任务加入延时队列，massMailTask:&#123;&#125;&quot;</span>, JSON.toJSON(massMailTask));</span><br><span class="line">        redisUtil.zAdd(MASS_MAIL_TASK_KEY, massMailTask.getTaskId().toString(), startTime.getTime());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> Set&lt;Long&gt; <span class="title function_">poolMassMailTaskQueue</span><span class="params">()</span> &#123;</span><br><span class="line">        Set&lt;String&gt; taskIdSet = redisUtil.rangeByScore(MASS_MAIL_TASK_KEY, <span class="number">0</span>, System.currentTimeMillis());</span><br><span class="line">        log.info(<span class="string">&quot;获取延迟群发任务，taskIdSet：&#123;&#125;&quot;</span>, JSON.toJSON(taskIdSet));</span><br><span class="line">        <span class="keyword">if</span> (CollectionUtils.isEmpty(taskIdSet)) &#123;</span><br><span class="line">            <span class="keyword">return</span> Collections.emptySet();</span><br><span class="line">        &#125;</span><br><span class="line">        redisUtil.removeZsetList(MASS_MAIL_TASK_KEY, taskIdSet);</span><br><span class="line">        <span class="keyword">return</span> taskIdSet.stream().map(n -&gt; Long.parseLong(n)).collect(Collectors.toSet());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>测试</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">push</span><span class="params">()</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">    <span class="type">SimpleDateFormat</span> <span class="variable">simpleDateFormat</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">SimpleDateFormat</span>(<span class="string">&quot;yyyy-MM-dd HH:mm:ss&quot;</span>);</span><br><span class="line">    <span class="type">MassMailTask</span> <span class="variable">massMailTask</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">MassMailTask</span>();</span><br><span class="line">    massMailTask.setTaskId(<span class="number">1L</span>);</span><br><span class="line">    massMailTask.setStartTime(simpleDateFormat.parse(<span class="string">&quot;2023-01-08 23:59:00&quot;</span>));</span><br><span class="line">    massMailTaskService.pushMassMailTaskQueue(massMailTask);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">deal</span><span class="params">()</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">    <span class="type">String</span> <span class="variable">lockKey</span> <span class="operator">=</span> <span class="string">&quot;test.delay.task&quot;</span>;</span><br><span class="line">    <span class="type">String</span> <span class="variable">requestId</span> <span class="operator">=</span> UUID.randomUUID().toString();</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="type">boolean</span> <span class="variable">locked</span> <span class="operator">=</span> redisShareLockUtil.lock(lockKey, requestId, <span class="number">5L</span>);</span><br><span class="line">        <span class="keyword">if</span> (!locked) &#123;</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        Set&lt;Long&gt; taskIdSet = massMailTaskService.poolMassMailTaskQueue();</span><br><span class="line">        log.info(<span class="string">&quot;DelayTaskTest.deal.taskIdSet:&#123;&#125;&quot;</span>, JSON.toJSON(taskIdSet));</span><br><span class="line">        <span class="keyword">if</span> (CollectionUtils.isEmpty(taskIdSet)) &#123;</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//执行其他的业务逻辑</span></span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">        log.error(<span class="string">&quot;延时任务拉取执行失败&quot;</span>, e);</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        redisShareLockUtil.unLock(lockKey, requestId);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>总结：实现效果：定时任务发布后，在时间没有到达之前拉取任务列表都无法拉取到，只有到达任务时间才能拉取到任务id</p>
+<h3 id="Redis配合lua脚本实现cas"><a href="#Redis配合lua脚本实现cas" class="headerlink" title="Redis配合lua脚本实现cas"></a>Redis配合lua脚本实现cas</h3><p>lua脚本:compareAndSet.lua</p>
+<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">local</span> key = KEYS[<span class="number">1</span>]</span><br><span class="line"><span class="keyword">local</span> oldValue = ARGV[<span class="number">1</span>]</span><br><span class="line"><span class="keyword">local</span> newValue = ARGV[<span class="number">2</span>]</span><br><span class="line"></span><br><span class="line"><span class="keyword">local</span> redisValue = redis.call(<span class="string">&#x27;get&#x27;</span>, key)</span><br><span class="line"><span class="keyword">if</span> (redisValue == <span class="literal">false</span> <span class="keyword">or</span> <span class="built_in">tonumber</span>(redisValue) == <span class="built_in">tonumber</span>(oldValue))</span><br><span class="line"><span class="keyword">then</span></span><br><span class="line">    redis.call(<span class="string">&#x27;set&#x27;</span>, key, newValue)</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span></span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span></span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></figure>
+
+<p>初始化lua脚本</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="meta">@Slf4j</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">RedisUtil</span> &#123;</span><br><span class="line"></span><br><span class="line"> <span class="comment">//创建DefaultRedisScript脚本，并初始化</span></span><br><span class="line">    <span class="keyword">private</span> DefaultRedisScript&lt;Boolean&gt; casScript;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//使用init的时候，需要使用postContrstruct加载脚本</span></span><br><span class="line">    <span class="meta">@PostConstruct</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">init</span><span class="params">()</span> &#123;</span><br><span class="line">        casScript = <span class="keyword">new</span> <span class="title class_">DefaultRedisScript</span>&lt;&gt;();</span><br><span class="line">        casScript.setResultType(Boolean.class);</span><br><span class="line">        casScript.setScriptSource(<span class="keyword">new</span> <span class="title class_">ResourceScriptSource</span>(<span class="keyword">new</span> <span class="title class_">ClassPathResource</span>(<span class="string">&quot;compareAndSet.lua&quot;</span>)));</span><br><span class="line">        System.out.println(JSON.toJSON(casScript));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//cas方法</span></span><br><span class="line">    <span class="keyword">public</span> Boolean <span class="title function_">compareAndSet</span><span class="params">(String key, Long oldValue, Long newValue)</span> &#123;</span><br><span class="line">        List&lt;String&gt; keys = <span class="keyword">new</span> <span class="title class_">ArrayList</span>();</span><br><span class="line">        keys.add(key);</span><br><span class="line">        <span class="keyword">return</span> (Boolean) redisTemplate.execute(casScript, keys, oldValue, newValue);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+
+  
+  
+
+
+  </article>
+  
+<div class="related-wrap reveal" id="read-next"><section class="body"><div class="item" id="prev"><div class="note">回顾上一篇</div><a href="/notes/note/log.html">集成Log模块</a></div><div class="item" id="next"><div class="note">接下来阅读</div><a href="/notes/note/tools.html">集成tools模块</a></div></section></div>
+
+  
+
+
+
+
+      
+<footer class="page-footer reveal fs12"><hr><div class="text"><p>本站由 <a href="/">@anonymity</a> 使用 <a target="_blank" rel="noopener" href="https://github.com/xaoxuu/hexo-theme-stellar">Stellar</a> 主题创建。<br>本博客所有文章除特别声明外，均采用 <a target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> 许可协议，转载请注明出处。</p>
+</div></footer>
+
+      <div class='float-panel mobile-only blur' style='display:none'>
+  <button type='button' class='sidebar-toggle mobile' onclick='sidebar.toggle()'>
+    <svg class="icon" style="width: 1em; height: 1em;vertical-align: middle;fill: currentColor;overflow: hidden;" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="15301"><path d="M566.407 808.3c26.9-0.1 49.3-20.8 51.6-47.6-1.9-27.7-23.9-49.7-51.6-51.6h-412.6c-28.2-1.4-52.6 19.5-55.5 47.6 2.3 26.8 24.6 47.5 51.6 47.6h416.5v4z m309.3-249.9c26.9-0.1 49.3-20.8 51.6-47.6-2.2-26.8-24.6-47.5-51.6-47.6h-721.9c-27.7-2.8-52.5 17.4-55.3 45.1-0.1 0.8-0.1 1.7-0.2 2.5 0.9 27.2 23.6 48.5 50.7 47.6H875.707z m-103.1-245.9c26.9-0.1 49.3-20.8 51.6-47.6-0.4-28.3-23.2-51.1-51.5-51.6h-618.9c-29.5-1.1-54.3 21.9-55.5 51.4v0.2c1.4 27.8 25.2 49.2 53 47.8 0.8 0 1.7-0.1 2.5-0.2h618.8z" p-id="15302"></path><path d="M566.407 808.3c26.9-0.1 49.3-20.8 51.6-47.6-1.9-27.7-23.9-49.7-51.6-51.6h-412.6c-28.2-1.4-52.6 19.5-55.5 47.6 1.9 27.7 23.9 49.7 51.6 51.6h416.5z m309.3-249.9c26.9-0.1 49.3-20.8 51.6-47.6-2.2-26.8-24.6-47.5-51.6-47.6h-721.9c-27.7-2.8-52.5 17.4-55.3 45.1-0.1 0.8-0.1 1.7-0.2 2.5 0.9 27.2 23.6 48.5 50.7 47.6H875.707z m-103.1-245.9c26.9-0.1 49.3-20.8 51.6-47.6-0.4-28.3-23.2-51.1-51.5-51.6h-618.9c-29.5-1.1-54.3 21.9-55.5 51.4v0.2c1.4 27.8 25.2 49.2 53 47.8 0.8 0 1.7-0.1 2.5-0.2h618.8z" p-id="15303"></path></svg>
+  </button>
+</div>
+
+    </div>
+  </div>
+  <div class='scripts'>
+    <script type="text/javascript">
+  const stellar = {
+    // 懒加载 css https://github.com/filamentgroup/loadCSS
+    loadCSS: (href, before, media, attributes) => {
+      var doc = window.document;
+      var ss = doc.createElement("link");
+      var ref;
+      if (before) {
+        ref = before;
+      } else {
+        var refs = (doc.body || doc.getElementsByTagName("head")[0]).childNodes;
+        ref = refs[refs.length - 1];
+      }
+      var sheets = doc.styleSheets;
+      if (attributes) {
+        for (var attributeName in attributes) {
+          if (attributes.hasOwnProperty(attributeName)) {
+            ss.setAttribute(attributeName, attributes[attributeName]);
+          }
+        }
+      }
+      ss.rel = "stylesheet";
+      ss.href = href;
+      ss.media = "only x";
+      function ready(cb) {
+        if (doc.body) {
+          return cb();
+        }
+        setTimeout(function () {
+          ready(cb);
+        });
+      }
+      ready(function () {
+        ref.parentNode.insertBefore(ss, before ? ref : ref.nextSibling);
+      });
+      var onloadcssdefined = function (cb) {
+        var resolvedHref = ss.href;
+        var i = sheets.length;
+        while (i--) {
+          if (sheets[i].href === resolvedHref) {
+            return cb();
+          }
+        }
+        setTimeout(function () {
+          onloadcssdefined(cb);
+        });
+      };
+      function loadCB() {
+        if (ss.addEventListener) {
+          ss.removeEventListener("load", loadCB);
+        }
+        ss.media = media || "all";
+      }
+      if (ss.addEventListener) {
+        ss.addEventListener("load", loadCB);
+      }
+      ss.onloadcssdefined = onloadcssdefined;
+      onloadcssdefined(loadCB);
+      return ss;
+    },
+
+    // 从 butterfly 和 volantis 获得灵感
+    loadScript: (src, opt) => new Promise((resolve, reject) => {
+      var script = document.createElement('script');
+      if (src.startsWith('/')){
+        src = stellar.config.root + src.substring(1);
+      }
+      script.src = src;
+      if (opt) {
+        for (let key of Object.keys(opt)) {
+          script[key] = opt[key]
+        }
+      } else {
+        // 默认异步，如果需要同步，第二个参数传入 {} 即可
+        script.async = true
+      }
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    }),
+
+    // https://github.com/jerryc127/hexo-theme-butterfly
+    jQuery: (fn) => {
+      if (typeof jQuery === 'undefined') {
+        stellar.loadScript(stellar.plugins.jQuery).then(fn)
+      } else {
+        fn()
+      }
+    }
+  };
+  stellar.version = '1.19.0';
+  stellar.github = 'https://github.com/xaoxuu/hexo-theme-stellar/tree/1.19.0';
+  stellar.config = {
+    date_suffix: {
+      just: '刚刚',
+      min: '分钟前',
+      hour: '小时前',
+      day: '天前',
+      month: '个月前',
+    },
+    root : '/',
+  };
+
+  // required plugins (only load if needs)
+  stellar.plugins = {
+    jQuery: 'https://gcore.jsdelivr.net/npm/jquery@3.6.2/dist/jquery.min.js'
+  };
+
+  if ('local_search') {
+    stellar.search = {};
+    stellar.search.service = 'local_search';
+    if (stellar.search.service == 'local_search') {
+      let service_obj = Object.assign({}, {"field":"all","path":"/search.json","content":true,"codeblock":true,"sort":"-date"});
+      stellar.search[stellar.search.service] = service_obj;
+    }
+  }
+
+  // stellar js
+  stellar.plugins.stellar = Object.assign({"sites":"/js/plugins/sites.js","friends":"/js/plugins/friends.js","ghinfo":"/js/plugins/ghinfo.js","timeline":"/js/plugins/timeline.js","linkcard":"/js/plugins/linkcard.js","fcircle":"/js/plugins/fcircle.js","weibo":"/js/plugins/weibo.js"});
+
+  stellar.plugins.marked = Object.assign("https://cdn.bootcdn.net/ajax/libs/marked/4.0.18/marked.min.js");
+  // optional plugins
+  if ('true' == 'true') {
+    stellar.plugins.lazyload = Object.assign({"enable":true,"js":"https://gcore.jsdelivr.net/npm/vanilla-lazyload@17.8.3/dist/lazyload.min.js","transition":"blur"});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.swiper = Object.assign({"enable":true,"css":"https://unpkg.com/swiper@8.4.5/swiper-bundle.min.css","js":"https://unpkg.com/swiper@8.4.5/swiper-bundle.min.js"});
+  }
+  if ('' == 'true') {
+    stellar.plugins.scrollreveal = Object.assign({"enable":null,"js":"https://gcore.jsdelivr.net/npm/scrollreveal@4.0.9/dist/scrollreveal.min.js","distance":"8px","duration":500,"interval":100,"scale":1});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.preload = Object.assign({"enable":true,"service":"flying_pages","instant_page":"https://gcore.jsdelivr.net/gh/volantis-x/cdn-volantis@4.1.2/js/instant_page.js","flying_pages":"https://gcore.jsdelivr.net/gh/gijo-varghese/flying-pages@2.1.2/flying-pages.min.js"});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.fancybox = Object.assign({"enable":true,"js":"https://gcore.jsdelivr.net/npm/@fancyapps/ui@4.0/dist/fancybox.umd.js","css":"https://gcore.jsdelivr.net/npm/@fancyapps/ui@4.0/dist/fancybox.css","selector":".swiper-slide img"});
+  }
+  if ('false' == 'true') {
+    stellar.plugins.heti = Object.assign({"enable":false,"css":"https://unpkg.com/heti@0.9.2/umd/heti.min.css","js":"https://unpkg.com/heti@0.9.2/umd/heti-addon.min.js"});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.copycode = Object.assign({"enable":true,"js":"/js/plugins/copycode.js","default_text":"Copy","success_text":"Copied"});
+  }
+</script>
+
+<!-- required -->
+
+  
+<script src="/js/main.js" async></script>
+
+
+
+<!-- optional -->
+
+
+
+<!-- inject -->
+
+
+  </div>
+</body>
+</html>
